@@ -12,5 +12,10 @@
     "body-parser": "^2.2.2",
     "express-rate-limit": "^8.4.1",
     "xss": "^1.0.15"
+  },
+  "overrides": {
+    "tar": "^7.5.15",
+    "ip-address": "^10.2.0",
+    "@tootallnate/once": "^3.0.1"
   }
 }

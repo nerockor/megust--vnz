@@ -113,14 +113,20 @@ const AdminPanel = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (adminToken) {
-      setIsAuthenticated(true);
-      fetchAds(adminToken);
-      if (userRole === 'admin') {
-        fetchUsers(adminToken);
-        fetchVisitors(adminToken);
+    const loadInitialData = async () => {
+      if (adminToken) {
+        setIsAuthenticated(true);
+        await fetchAds(adminToken);
+        if (userRole === 'admin') {
+          // Secuencial con pequeño retraso para evitar bloqueo HTTP 429 (WAF/DoS protection)
+          await new Promise(resolve => setTimeout(resolve, 300));
+          await fetchUsers(adminToken);
+          await new Promise(resolve => setTimeout(resolve, 300));
+          await fetchVisitors(adminToken);
+        }
       }
-    }
+    };
+    loadInitialData();
   }, []);
 
   const handleLogin = async () => {
@@ -134,10 +140,12 @@ const AdminPanel = () => {
       localStorage.setItem('admin_token', token);
       localStorage.setItem('admin_role', role);
       localStorage.setItem('admin_username', resUsername);
-      fetchAds(token);
+      await fetchAds(token);
       if (role === 'admin') {
-        fetchUsers(token);
-        fetchVisitors(token);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await fetchUsers(token);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await fetchVisitors(token);
       }
       setLoginError(false);
     } catch (err) {
@@ -228,7 +236,8 @@ const AdminPanel = () => {
       });
 
       setUrl(''); setBase64Image(''); setName(''); setPhone(''); setEmail(''); setLocation(''); setCategory(RUBROS[0]); setBarrio(''); setZona(''); setDescription(''); setLat(''); setLng(''); setExpirationDate(''); setSize('10');
-      fetchAds();
+      // Actualizamos estado local sin refrescar listado completo
+      setAds(prevAds => [...prevAds, resp.data]);
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err) {
       setStatus('error');
@@ -239,11 +248,12 @@ const AdminPanel = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`/api/ads/${editingAd.id}`, editingAd, {
+      const resp = await axios.put(`/api/ads/${editingAd.id}`, editingAd, {
         headers: { 'x-admin-token': adminToken }
       });
       setEditingAd(null);
-      fetchAds();
+      // Actualizar anuncio localmente
+      setAds(prevAds => prevAds.map(ad => ad.id === editingAd.id ? resp.data : ad));
     } catch (err) {
       console.error(err);
       alert('Error al actualizar. Verifique su token.');
@@ -256,7 +266,8 @@ const AdminPanel = () => {
       await axios.delete(`/api/ads/${id}`, {
         headers: { 'x-admin-token': adminToken }
       });
-      fetchAds();
+      // Eliminar anuncio localmente
+      setAds(prevAds => prevAds.filter(ad => ad.id !== id));
     } catch (err) {
       console.error(err);
       alert('Error al eliminar. Verifique su token.');
@@ -270,9 +281,10 @@ const AdminPanel = () => {
   const createUser = async () => {
     if (!newUser.username || !newUser.password) return;
     try {
-      await axios.post('/api/users', newUser, { headers: { 'x-admin-token': adminToken } });
+      const resp = await axios.post('/api/users', newUser, { headers: { 'x-admin-token': adminToken } });
       setNewUser({ username: '', password: '' });
-      fetchUsers(adminToken);
+      // Actualizar listado local de usuarios
+      setSystemUsers(prevUsers => [...prevUsers, resp.data]);
     } catch (err) { alert('Error al crear usuario. Puede que ya exista.'); }
   };
 
@@ -280,7 +292,8 @@ const AdminPanel = () => {
     if (!window.confirm('¿Eliminar vendedor?')) return;
     try {
       await axios.delete(`/api/users/${id}`, { headers: { 'x-admin-token': adminToken } });
-      fetchUsers(adminToken);
+      // Eliminar vendedor localmente
+      setSystemUsers(prevUsers => prevUsers.filter(u => u.id !== id));
     } catch (err) { console.error('Error', err); }
   };
 

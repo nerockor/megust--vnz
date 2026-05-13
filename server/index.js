@@ -62,7 +62,7 @@ const clean = (val) => (typeof val === 'string' ? xss(val) : val);
 
 // Database setup
 console.log('>>> [DEBUG] ABRIENDO BASE DE DATOS...');
-const dbPath = path.resolve(__dirname, 'database.db');
+const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'database.db');
 console.log('>>> [DEBUG] RUTA DB:', dbPath);
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
