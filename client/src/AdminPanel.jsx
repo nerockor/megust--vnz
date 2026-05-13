@@ -27,15 +27,41 @@ const RUBROS = [
   'Restaurante', 'Heladeria', 'Pintureria'
 ];
 
+const ZONAS_POR_CIUDAD = {
+  'La Guaira (La Guaira)': [
+    'Catia La Mar', 'Maiquetía', 'Macuto', 'Caraballeda', 'Caribe', 
+    'Tanaguarena', 'Camurí Chico', 'Naiguatá', 'Camurí Grande', 
+    'Los Caracas', 'Playa Grande', 'Carayaca', 'Puerto Cruz', 
+    'Chichiriviche', 'Oricao'
+  ],
+  'Distrito Capital (Caracas)': [
+    'Propatria', 'Agua Salud', 'Capitolio', 'La Hoyada', 'Bellas Artes', 
+    'Plaza Venezuela', 'Sabana Grande', 'Chacaíto', 'Chacao', 'Altamira', 
+    'Miranda', 'Los Dos Caminos', 'Los Cortijos', 'Petare', 'Palo Verde',
+    'La Paz', 'Artigas', 'Maternidad', 'El Silencio', 'Zona Rental'
+  ],
+  'Miranda (Los Teques)': [
+    'Los Teques', 'San Antonio de los Altos', 'Guarenas', 'Guatire', 
+    'Charallave', 'Cúa', 'Santa Teresa', 'Ocumare del Tuy', 
+    'Higuerote', 'Río Chico', 'Baruta', 'El Hatillo'
+  ],
+  'Carabobo (Valencia)': [
+    'Valencia', 'Puerto Cabello', 'Guacara', 'Mariara', 
+    'San Joaquín', 'Naguanagua', 'San Diego', 'Morón'
+  ],
+  'Nueva Esparta (La Asunción)': [
+    'Porlamar', 'Pampatar', 'La Asunción', 'Juan Griego', 'El Valle'
+  ]
+};
+
 const BARRIOS = [
-  'Agronomía', 'Almagro', 'Balvanera', 'Barracas', 'Belgrano', 'Boedo', 'Caballito', 'Chacarita',
-  'Coghlan', 'Colegiales', 'Constitución', 'Flores', 'Floresta', 'La Boca', 'La Paternal',
-  'Liniers', 'Mataderos', 'Monte Castro', 'Monserrat', 'Nueva Pompeya', 'Núñez', 'Palermo',
-  'Parque Avellaneda', 'Parque Chacabuco', 'Parque Chas', 'Parque Patricios', 'Puerto Madero',
-  'Recoleta', 'Retiro', 'Saavedra', 'San Cristóbal', 'San Nicolás', 'San Telmo', 'Vélez Sársfield',
-  'Versalles', 'Villa Crespo', 'Villa del Parque', 'Villa Devoto', 'Villa General Mitre',
-  'Villa Lugano', 'Villa Luro', 'Villa Ortúzar', 'Villa Pueyrredón', 'Villa Real', 'Villa Riachuelo',
-  'Villa Santa Rita', 'Villa Soldati', 'Villa Urquiza'
+  'Amazonas (Puerto Ayacucho)', 'Anzoátegui (Barcelona)', 'Apure (San Fernando de Apure)',
+  'Aragua (Maracay)', 'Barinas (Barinas)', 'Bolívar (Ciudad Bolívar)', 'Carabobo (Valencia)',
+  'Cojedes (San Carlos)', 'Delta Amacuro (Tucupita)', 'Falcón (Coro)', 'Guárico (San Juan de los Morros)',
+  'Lara (Barquisimeto)', 'Mérida (Mérida)', 'Miranda (Los Teques)', 'Monagas (Maturín)',
+  'Nueva Esparta (La Asunción)', 'Portuguesa (Guanare)', 'Sucre (Cumaná)', 'Táchira (San Cristóbal)',
+  'Trujillo (Trujillo)', 'La Guaira (La Guaira)', 'Yaracuy (San Felipe)', 'Zulia (Maracaibo)',
+  'Distrito Capital (Caracas)'
 ];
 
 const AdminPanel = () => {
@@ -47,6 +73,7 @@ const AdminPanel = () => {
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState(RUBROS[0]);
   const [barrio, setBarrio] = useState('');
+  const [zona, setZona] = useState('');
   const [description, setDescription] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
@@ -61,6 +88,18 @@ const AdminPanel = () => {
   const [systemUsers, setSystemUsers] = useState([]);
   const [newUser, setNewUser] = useState({ username: '', password: '' });
   const [showUsersModal, setShowUsersModal] = useState(false);
+  
+  const [visitors, setVisitors] = useState([]);
+  const [activeTab, setActiveTab] = useState('ads');
+
+  const fetchVisitors = async (token) => {
+    try {
+      const res = await axios.get('/api/admin/visitors', { headers: { 'x-admin-token': token } });
+      setVisitors(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState(false);
@@ -77,7 +116,10 @@ const AdminPanel = () => {
     if (adminToken) {
       setIsAuthenticated(true);
       fetchAds(adminToken);
-      if (userRole === 'admin') fetchUsers(adminToken);
+      if (userRole === 'admin') {
+        fetchUsers(adminToken);
+        fetchVisitors(adminToken);
+      }
     }
   }, []);
 
@@ -93,7 +135,10 @@ const AdminPanel = () => {
       localStorage.setItem('admin_role', role);
       localStorage.setItem('admin_username', resUsername);
       fetchAds(token);
-      if (role === 'admin') fetchUsers(token);
+      if (role === 'admin') {
+        fetchUsers(token);
+        fetchVisitors(token);
+      }
       setLoginError(false);
     } catch (err) {
       setIsAuthenticated(false);
@@ -161,7 +206,7 @@ const AdminPanel = () => {
     try {
       const resp = await axios.post('/api/ads', {
         url, sector: selectedSector, image: base64Image,
-        name, phone, email, location, category, barrio, description, lat, lng, expiration_date: expirationDate, size
+        name, phone, email, location, category, barrio, zona, description, lat, lng, expiration_date: expirationDate, size
       }, {
         headers: { 'x-admin-token': adminToken }
       });
@@ -182,7 +227,7 @@ const AdminPanel = () => {
           expiration_date: expirationDate
       });
 
-      setUrl(''); setBase64Image(''); setName(''); setPhone(''); setEmail(''); setLocation(''); setCategory(RUBROS[0]); setBarrio(''); setDescription(''); setLat(''); setLng(''); setExpirationDate(''); setSize('10');
+      setUrl(''); setBase64Image(''); setName(''); setPhone(''); setEmail(''); setLocation(''); setCategory(RUBROS[0]); setBarrio(''); setZona(''); setDescription(''); setLat(''); setLng(''); setExpirationDate(''); setSize('10');
       fetchAds();
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err) {
@@ -300,7 +345,15 @@ const AdminPanel = () => {
           <h1 className="admin-title">Panel de Control de Anunciantes</h1>
           <p className="admin-subtitle">Gestión estratégica de la grilla de Buenos Aires</p>
         </div>
+        {userRole === 'admin' && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setActiveTab('ads')} className={`cyber-btn ${activeTab === 'ads' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '10px' }}>Anuncios</button>
+            <button onClick={() => setActiveTab('visitors')} className={`cyber-btn ${activeTab === 'visitors' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '10px' }}>Usuarios Registrados</button>
+          </div>
+        )}
       </header>
+
+      <div style={{ display: activeTab === 'ads' ? 'block' : 'none' }}>
 
       {/* ===== EDIT MODAL (Bottom Sheet) ===== */}
       {editingAd && (
@@ -372,12 +425,21 @@ const AdminPanel = () => {
 
               <div className="field-row">
                 <div className="field-group">
-                  <label className="admin-label">Barrio</label>
+                  <label className="admin-label">Ciudad</label>
                   <select className="admin-input" value={editingAd.barrio || ''} onChange={(e) => setEditingAd({ ...editingAd, barrio: e.target.value })}>
-                    <option value="">Seleccionar Barrio...</option>
+                    <option value="">Seleccionar Ciudad...</option>
                     {BARRIOS.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
+                {ZONAS_POR_CIUDAD[editingAd.barrio] && (
+                  <div className="field-group">
+                    <label className="admin-label">Zona</label>
+                    <select className="admin-input" value={editingAd.zona || ''} onChange={(e) => setEditingAd({ ...editingAd, zona: e.target.value })}>
+                      <option value="">Seleccionar Zona...</option>
+                      {ZONAS_POR_CIUDAD[editingAd.barrio].map(z => <option key={z} value={z}>{z}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div className="field-group">
                   <label className="admin-label">Ubicación</label>
                   <input type="text" className="admin-input" value={editingAd.location || ''} onChange={(e) => setEditingAd({ ...editingAd, location: e.target.value })} placeholder="Dirección..." />
@@ -524,12 +586,21 @@ const AdminPanel = () => {
 
                   <div className="field-row">
                     <div className="field-group">
-                      <label className="admin-label"><MapPin size={10} /> Barrio</label>
+                      <label className="admin-label"><MapPin size={10} /> Ciudad</label>
                       <select className="admin-input" value={barrio} onChange={(e) => setBarrio(e.target.value)}>
                         <option value="">Sin definir</option>
                         {BARRIOS.map(b => <option key={b} value={b}>{b}</option>)}
                       </select>
                     </div>
+                    {ZONAS_POR_CIUDAD[barrio] && (
+                      <div className="field-group">
+                        <label className="admin-label"><MapPin size={10} /> Zona</label>
+                        <select className="admin-input" value={zona} onChange={(e) => setZona(e.target.value)}>
+                          <option value="">Sin definir</option>
+                          {ZONAS_POR_CIUDAD[barrio].map(z => <option key={z} value={z}>{z}</option>)}
+                        </select>
+                      </div>
+                    )}
                     <div className="field-group">
                       <label className="admin-label"><MapPin size={10} /> Ubicación</label>
                       <input type="text" className="admin-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dirección..." />
@@ -672,7 +743,8 @@ const AdminPanel = () => {
                         <span className="history-name">{ad.name || 'Sin Nombre'}</span>
                         <div className="history-meta">
                           <span className="history-tag">{ad.category || 'Rubro'}</span>
-                          <span className="history-tag" style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399' }}>{ad.barrio || 'Sin Barrio'}</span>
+                          <span className="history-tag" style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399' }}>{ad.barrio || 'Sin Ciudad'}</span>
+                          {ad.zona && <span className="history-tag" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}>{ad.zona}</span>}
                           <span className="history-url">{ad.url}</span>
                         </div>
                       </div>
@@ -737,7 +809,47 @@ const AdminPanel = () => {
             </>
           )}
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+        </div> {/* END of ADS TAB */}
+
+        <div style={{ display: activeTab === 'visitors' ? 'block' : 'none' }}>
+          <div className="glass-card" style={{ padding: 20 }}>
+            <h2 style={{ color: '#f8fafc', marginBottom: '20px', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Users size={20} style={{ color: '#00e5ff' }} />
+              Usuarios Registrados ({visitors.length})
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {visitors.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '20px' }}>No hay usuarios registrados aún.</p>
+              ) : visitors.map(v => (
+                <div key={v.id} className="history-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '20px', background: 'rgba(0, 229, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5ff' }}>
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <p style={{ color: 'white', fontSize: '15px', fontWeight: '800' }}>{v.name}</p>
+                      <p style={{ color: '#94a3b8', fontSize: '12px' }}>{v.email} • {v.phone}</p>
+                      <p style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>Registrado: {new Date(v.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', textAlign: 'center' }}>
+                    <div>
+                      <p style={{ color: '#a5b4fc', fontSize: '18px', fontWeight: '900' }}>{v.click_count}</p>
+                      <p style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', fontWeight: '700' }}>Clicks</p>
+                    </div>
+                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                    <div>
+                      <p style={{ color: '#34d399', fontSize: '18px', fontWeight: '900' }}>{v.rating_count}</p>
+                      <p style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', fontWeight: '700' }}>Valoraciones</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
             <button onClick={() => navigate('/')} className="back-btn" style={{ flex: 1 }}>
               VOLVER A LA ESFERA
             </button>
@@ -781,7 +893,9 @@ const AdminPanel = () => {
                         </div>
                         <div>
                           <p style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>{u.username}</p>
-                          <p style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase' }}>Rol: {u.role}</p>
+                          <p style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase' }}>
+                            Rol: {u.role} • <span style={{ color: u.ads_last_month > 0 ? '#34d399' : '#f87171', fontWeight: 'bold' }}>{u.ads_last_month} Negocios</span> este mes
+                          </p>
                         </div>
                       </div>
                       <button onClick={() => deleteUser(u.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px' }}>

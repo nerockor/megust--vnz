@@ -85,14 +85,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
             location TEXT,
             category TEXT,
             barrio TEXT,
+            zona TEXT,
             description TEXT,
             lat REAL,
             lng REAL,
             expiration_date TEXT,
+            created_by INTEGER,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        const columns = ['image', 'name', 'phone', 'email', 'expiration_date', 'location', 'category', 'barrio', 'lat', 'lng', 'description'];
+        const columns = ['image', 'name', 'phone', 'email', 'expiration_date', 'location', 'category', 'barrio', 'zona', 'lat', 'lng', 'description', 'created_by'];
         columns.forEach(col => {
             db.run(`ALTER TABLE ads ADD COLUMN ${col} TEXT`, (err) => {
                 if (err) { /* column probably exists */ }
@@ -124,6 +126,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
             whatsapp_clicks TEXT DEFAULT '[]',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ad_id INTEGER NOT NULL,
+            visitor_id INTEGER NOT NULL,
+            score INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(ad_id, visitor_id)
+        )`);
     }
 });
 
@@ -147,7 +158,7 @@ const SECTORS = {
 
 // API: Get all ads (Lightweight - No images)
 app.get('/api/ads', (req, res) => {
-    db.all("SELECT id, url, x, y, width, height, sector, name, phone, location, category, barrio, description, lat, lng, expiration_date FROM ads", [], (err, rows) => {
+    db.all("SELECT id, url, x, y, width, height, sector, name, phone, location, category, barrio, zona, description, lat, lng, expiration_date FROM ads", [], (err, rows) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
@@ -184,9 +195,58 @@ app.post('/api/auth/login', (req, res) => {
 // API: User Management (Admin Only)
 app.get('/api/users', auth, (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
-    db.all("SELECT id, username, role FROM users WHERE role != 'admin'", [], (err, rows) => {
+    db.all(`
+        SELECT 
+            u.id, 
+            u.username, 
+            u.role,
+            COUNT(a.id) as ads_last_month
+        FROM users u
+        LEFT JOIN ads a ON u.id = a.created_by AND a.created_at >= date('now', '-30 days')
+        WHERE u.role != 'admin'
+        GROUP BY u.id
+    `, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+app.get('/api/admin/visitors', auth, (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Acceso denegado' });
+    
+    db.all(`
+        SELECT 
+            v.id, 
+            v.name, 
+            v.email, 
+            v.phone,
+            v.whatsapp_clicks,
+            v.created_at,
+            COUNT(r.id) as rating_count
+        FROM visitors v
+        LEFT JOIN ratings r ON v.id = r.visitor_id
+        GROUP BY v.id
+        ORDER BY v.created_at DESC
+    `, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const visitorsWithStats = rows.map(row => {
+            let clicks = [];
+            try {
+                clicks = JSON.parse(row.whatsapp_clicks || '[]');
+            } catch(e) {}
+            return {
+                id: row.id,
+                name: row.name,
+                email: row.email,
+                phone: row.phone,
+                created_at: row.created_at,
+                rating_count: row.rating_count,
+                click_count: clicks.length
+            };
+        });
+        
+        res.json(visitorsWithStats);
     });
 });
 
@@ -227,7 +287,7 @@ app.post('/api/ads/batch', (req, res) => {
 
 // API: Add new ad
 app.post('/api/ads', auth, (req, res) => {
-    let { url, sector, image, name, phone, email, location, category, barrio, description, lat, lng, expiration_date, size } = req.body;
+    let { url, sector, image, name, phone, email, location, category, barrio, zona, description, lat, lng, expiration_date, size } = req.body;
 
     // Sanitize critical string inputs
     name = clean(name);
@@ -235,6 +295,7 @@ app.post('/api/ads', auth, (req, res) => {
     description = clean(description);
     category = clean(category);
     barrio = clean(barrio);
+    zona = clean(zona);
 
     if (!url || !sector || !SECTORS[sector]) {
         return res.status(400).json({ error: 'URL and valid sector are required' });
@@ -319,8 +380,9 @@ app.post('/api/ads', auth, (req, res) => {
         const nextX = bounds.x + (bestCol * GRID_STEP);
         const nextY = bounds.y + (bestRow * GRID_STEP);
 
-        const stmt = db.prepare("INSERT INTO ads (url, x, y, sector, width, height, image, name, phone, email, location, category, barrio, description, lat, lng, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        stmt.run(url, nextX, nextY, sector, requestedSize, requestedSize, image, name, phone, email, location, category, barrio, description, lat, lng, expiration_date, function(err) {
+        const createdBy = req.user.id || 0; // 0 for super admin if no ID
+        const stmt = db.prepare("INSERT INTO ads (url, x, y, sector, width, height, image, name, phone, email, location, category, barrio, zona, description, lat, lng, expiration_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        stmt.run(url, nextX, nextY, sector, requestedSize, requestedSize, image, name, phone, email, location, category, barrio, zona, description, lat, lng, expiration_date, createdBy, function(err) {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
@@ -388,20 +450,59 @@ app.post('/api/visitors/:id/click', (req, res) => {
     });
 });
 
+// --- RATINGS ENDPOINTS ---
+
+app.get('/api/ads/:id/rating', (req, res) => {
+    const { id } = req.params;
+    db.get("SELECT AVG(score) as avg, COUNT(*) as count FROM ratings WHERE ad_id = ?", [id], (err, row) => {
+        if (err) return res.status(500).json({ error: 'Error al obtener rating' });
+        res.json({ 
+            avg: row.avg ? parseFloat(row.avg.toFixed(1)) : 0, 
+            count: row.count || 0 
+        });
+    });
+});
+
+app.post('/api/ads/:id/rate', (req, res) => {
+    const { id } = req.params; // ad_id
+    const { visitor_id, score } = req.body;
+
+    if (!visitor_id || !score || score < 1 || score > 5) {
+        return res.status(400).json({ error: 'Datos de valoración inválidos' });
+    }
+
+    db.run(`INSERT INTO ratings (ad_id, visitor_id, score) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT(ad_id, visitor_id) 
+            DO UPDATE SET score = excluded.score, created_at = CURRENT_TIMESTAMP`, 
+    [id, visitor_id, score], function(err) {
+        if (err) return res.status(500).json({ error: 'Error al guardar valoración' });
+        res.json({ success: true });
+    });
+});
+
+app.get('/api/visitors/:id/ratings', (req, res) => {
+    const { id } = req.params;
+    db.all("SELECT r.*, a.name as ad_name FROM ratings r JOIN ads a ON r.ad_id = a.id WHERE r.visitor_id = ? ORDER BY r.created_at DESC", [id], (err, rows) => {
+        if (err) return res.status(500).json({ error: 'Error al obtener valoraciones del usuario' });
+        res.json(rows);
+    });
+});
+
 // Serve frontend in production
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // API: Update ad
 app.put('/api/ads/:id', auth, (req, res) => {
     const { id } = req.params;
-    let { url, image, name, phone, email, location, category, barrio, description, lat, lng, expiration_date } = req.body;
+    let { url, image, name, phone, email, location, category, barrio, zona, description, lat, lng, expiration_date } = req.body;
     
     name = clean(name);
     location = clean(location);
     description = clean(description);
     
-    db.run("UPDATE ads SET url = ?, image = ?, name = ?, phone = ?, email = ?, location = ?, category = ?, barrio = ?, description = ?, lat = ?, lng = ?, expiration_date = ? WHERE id = ?", 
-        [url, image, name, phone, email, location, category, barrio, description, lat, lng, expiration_date, id], function(err) {
+    db.run("UPDATE ads SET url = ?, image = ?, name = ?, phone = ?, email = ?, location = ?, category = ?, barrio = ?, zona = ?, description = ?, lat = ?, lng = ?, expiration_date = ? WHERE id = ?", 
+        [url, image, name, phone, email, location, category, barrio, zona, description, lat, lng, expiration_date, id], function(err) {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -426,12 +527,12 @@ app.get('/api/ads/export/csv', auth, (req, res) => {
         return res.status(403).send('Acceso denegado. Solo administradores pueden exportar datos.');
     }
 
-    db.all("SELECT id, name, url, phone, email, location, category, barrio, description, lat, lng, sector, x, y, width, height, expiration_date, created_at FROM ads ORDER BY id", [], (err, rows) => {
+    db.all("SELECT id, name, url, phone, email, location, category, barrio, zona, description, lat, lng, sector, x, y, width, height, expiration_date, created_at FROM ads ORDER BY id", [], (err, rows) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
 
-        const headers = ['ID', 'Nombre', 'URL', 'Teléfono', 'Email', 'Ubicación', 'Rubro', 'Barrio', 'Descripción', 'Lat', 'Lng', 'Sector', 'X', 'Y', 'Ancho', 'Alto', 'Vencimiento', 'Fecha Registro'];
+        const headers = ['ID', 'Nombre', 'URL', 'Teléfono', 'Email', 'Ubicación', 'Rubro', 'Barrio', 'Zona', 'Descripción', 'Lat', 'Lng', 'Sector', 'X', 'Y', 'Ancho', 'Alto', 'Vencimiento', 'Fecha Registro'];
         const escapeCsv = (val) => {
             if (val === null || val === undefined) return '';
             const str = String(val);
@@ -445,7 +546,7 @@ app.get('/api/ads/export/csv', auth, (req, res) => {
         rows.forEach(row => {
             csvRows.push([
                 row.id, escapeCsv(row.name), escapeCsv(row.url), escapeCsv(row.phone),
-                escapeCsv(row.email), escapeCsv(row.location), escapeCsv(row.category), escapeCsv(row.barrio),
+                escapeCsv(row.email), escapeCsv(row.location), escapeCsv(row.category), escapeCsv(row.barrio), escapeCsv(row.zona),
                 escapeCsv(row.description), row.lat, row.lng, escapeCsv(row.sector), row.x, row.y, row.width, row.height,
                 escapeCsv(row.expiration_date), escapeCsv(row.created_at)
             ].join(','));

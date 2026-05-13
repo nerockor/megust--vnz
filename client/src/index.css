@@ -1,8 +1,8 @@
 :root {
   --primary: #9ca3af;
   --primary-hover: #6b7280;
-  --bg: #0f172a;
-  --card-bg: rgba(30, 41, 59, 0.7);
+  --bg: #1a1a1a;
+  --card-bg: rgba(26, 26, 26, 0.7);
   --text: #f8fafc;
   --text-muted: #94a3b8;
   --border: rgba(255, 255, 255, 0.1);
