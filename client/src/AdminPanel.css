@@ -853,3 +853,80 @@ select.admin-input {
   border-color: #6366f1;
   background: rgba(99, 102, 241, 0.05);
 }
+
+/* ========================================
+   HEADER & CYBER BUTTONS
+   ======================================== */
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 20px;
+  background: rgba(15, 23, 42, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 0;
+  flex-wrap: wrap;
+  gap: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.cyber-btn {
+  position: relative;
+  overflow: hidden;
+  background: #101010;
+  color: #c9c9c9;
+  border: 1px solid rgba(201, 201, 201, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  z-index: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.cyber-btn.active::before {
+  content: '';
+  position: absolute;
+  top: -150%;
+  left: -50%;
+  width: 200%;
+  height: 400%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    #00e5ff 90deg,
+    #ffc400 180deg,
+    #ff0055 270deg,
+    transparent 360deg
+  );
+  animation: rotateCyber 3s linear infinite;
+  z-index: -2;
+}
+
+.cyber-btn.active::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: #101010;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.cyber-btn.active {
+  color: #fff;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+@keyframes rotateCyber {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

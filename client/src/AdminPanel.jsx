@@ -346,9 +346,17 @@ const AdminPanel = () => {
           <p className="admin-subtitle">Gestión estratégica de la grilla de Buenos Aires</p>
         </div>
         {userRole === 'admin' && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <button onClick={() => setActiveTab('ads')} className={`cyber-btn ${activeTab === 'ads' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '10px' }}>Anuncios</button>
             <button onClick={() => setActiveTab('visitors')} className={`cyber-btn ${activeTab === 'visitors' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '10px' }}>Usuarios Registrados</button>
+            <button onClick={() => setShowUsersModal(true)} className="cyber-btn" style={{ padding: '8px 12px', fontSize: '10px' }}>Vendedores</button>
+            <button 
+              onClick={() => { handleLogout(); window.location.reload(); }} 
+              className="cyber-btn" 
+              style={{ padding: '8px 12px', fontSize: '10px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
+            >
+              Cerrar Sesión
+            </button>
           </div>
         )}
       </header>

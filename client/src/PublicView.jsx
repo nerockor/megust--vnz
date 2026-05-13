@@ -130,6 +130,19 @@ const PublicView = () => {
   const [authForm, setAuthForm] = useState({ name: '', phone: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [adRating, setAdRating] = useState({ avg: 0, count: 0 });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favoriteAdIds, setFavoriteAdIds] = useState(new Set());
+
+  const fetchFavorites = async () => {
+    if (!visitorData?.id) return;
+    try {
+      const res = await axios.get(`/api/visitors/${visitorData.id}/ratings`);
+      const ids = new Set(res.data.map(r => r.ad_id));
+      setFavoriteAdIds(ids);
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -544,8 +557,14 @@ const PublicView = () => {
     // 1. Draw all background ads (the grid squares)
     const validAds = Array.isArray(ads) ? ads : [];
     const filteredAds = validAds.filter(ad => {
-      const isFilteredOut = (selectedCategory && ad.category !== selectedCategory) || 
-                           (selectedBarrio && ad.barrio !== selectedBarrio);
+      let isFilteredOut = (selectedCategory && ad.category !== selectedCategory) || 
+                           (selectedBarrio && ad.barrio !== selectedBarrio) ||
+                           (selectedZona && ad.zona !== selectedZona);
+      
+      if (showFavoritesOnly && !favoriteAdIds.has(ad.id)) {
+        isFilteredOut = true;
+      }
+      
       return !isFilteredOut;
     });
 
@@ -585,9 +604,13 @@ const PublicView = () => {
       const hy = cy - targetSize / 2;
 
       ctx.save();
-      const isFilteredOut = (selectedCategory && hoveredAd.category !== selectedCategory) || 
+      let isFilteredOut = (selectedCategory && hoveredAd.category !== selectedCategory) || 
                            (selectedBarrio && hoveredAd.barrio !== selectedBarrio) ||
                            (selectedZona && hoveredAd.zona !== selectedZona);
+      
+      if (showFavoritesOnly && !favoriteAdIds.has(hoveredAd.id)) {
+        isFilteredOut = true;
+      }
 
       if (!isFilteredOut) {
         ctx.shadowColor = '#9ca3af';
@@ -768,8 +791,7 @@ const PublicView = () => {
             </h2>
             {isLoggedIn && (
               <p className="text-slate-400 text-xs mt-3 leading-relaxed font-medium">
-                Ya sos parte. Explorá los locales que hacen que Buenos Aires sea única. Todo lo que aparece acá <br/>
-                <span className="text-slate-400 is-posta-font">¡Me gusta Venezuela!</span>
+                Ya eres parte. de los mejores locales que hacen que Venezuela sea única. Todo lo que aparece acá
               </p>
             )}
           </div>
@@ -781,9 +803,17 @@ const PublicView = () => {
               <Zap size={18} className="text-slate-400" />
               <span>Mi Cuenta</span>
             </button>
-            <button className="drawer-item" onClick={() => setMenuOpen(false)}>
-              <Tag size={18} className="text-emerald-400" />
-              <span>Mis Anuncios</span>
+            <button className="drawer-item" onClick={() => { 
+              if (showFavoritesOnly) {
+                setShowFavoritesOnly(false);
+              } else {
+                fetchFavorites();
+                setShowFavoritesOnly(true);
+              }
+              setMenuOpen(false); 
+            }}>
+              <Tag size={18} className={showFavoritesOnly ? "text-emerald-400" : "text-slate-400"} />
+              <span>{showFavoritesOnly ? 'Ver Todos' : 'Mis Favoritos'}</span>
             </button>
             <button className="drawer-item" onClick={() => setMenuOpen(false)}>
               <Mail size={18} className="text-slate-400" />
