@@ -3,3 +3,5 @@ node_modules/
 server/database.db
 client/node_modules/
 .env
+*.db
+**/database.db
