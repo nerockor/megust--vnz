@@ -111,7 +111,7 @@ const PublicView = () => {
         white-space: nowrap;
         font-weight: 900;
         text-transform: uppercase;
-        color: #818cf8;
+        color: #94a3b8;
         font-size: 14px;
         letter-spacing: 1px;
       }
@@ -150,9 +150,9 @@ const PublicView = () => {
         background: conic-gradient(
           from 0deg,
           transparent 0deg,
-          #ff00ff 90deg,
-          #00ffff 180deg,
-          #00ff00 270deg,
+          #ffffff 90deg,
+          #9ca3af 180deg,
+          #d1d5db 270deg,
           transparent 360deg
         );
         animation: rotateCyber 3s linear infinite;
@@ -198,9 +198,9 @@ const PublicView = () => {
         background: conic-gradient(
           from 0deg,
           transparent 0deg,
-          #ff00ff 90deg,
-          #00ffff 180deg,
-          #00ff00 270deg,
+          #ffffff 90deg,
+          #9ca3af 180deg,
+          #d1d5db 270deg,
           transparent 360deg
         );
         animation: rotateCyber 3s linear infinite;
@@ -220,7 +220,7 @@ const PublicView = () => {
         object-fit: contain;
         justify-self: center;
         z-index: 2;
-        filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
+        filter: drop-shadow(0 0 8px rgba(148, 163, 184, 0.3));
       }
       .header-title {
         font-family: 'Josefin Sans', sans-serif;
@@ -267,7 +267,7 @@ const PublicView = () => {
       .isotype-icon {
         width: 20px;
         height: 20px;
-        filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.5));
+        filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.5));
       }
       .user-drawer {
         position: fixed;
@@ -319,8 +319,8 @@ const PublicView = () => {
         gap: 12px;
       }
       .drawer-item:hover {
-        background: rgba(139, 92, 246, 0.2);
-        border-color: rgba(139, 92, 246, 0.4);
+        background: rgba(71, 85, 105, 0.2);
+        border-color: rgba(71, 85, 105, 0.4);
       }
       .modal-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
@@ -463,7 +463,7 @@ const PublicView = () => {
         ctx.drawImage(img, ad.x, ad.y, ad.width, ad.height);
         ctx.filter = 'none';
       } else {
-        ctx.fillStyle = isFilteredOut ? '#1e293b' : '#6366f1';
+        ctx.fillStyle = isFilteredOut ? '#1e293b' : '#9ca3af';
         ctx.fillRect(ad.x, ad.y, ad.width, ad.height);
       }
     });
@@ -487,7 +487,7 @@ const PublicView = () => {
                            (selectedBarrio && hoveredAd.barrio !== selectedBarrio);
 
       if (!isFilteredOut) {
-        ctx.shadowColor = '#6366f1';
+        ctx.shadowColor = '#9ca3af';
         ctx.shadowBlur = 30 / transform.scale;
         ctx.filter = 'none';
       } else {
@@ -500,7 +500,7 @@ const PublicView = () => {
       if (img) {
         ctx.drawImage(img, hx, hy, targetSize, targetSize);
       } else {
-        ctx.fillStyle = isFilteredOut ? '#1e293b' : '#818cf8';
+        ctx.fillStyle = isFilteredOut ? '#1e293b' : '#cbd5e1';
         ctx.fillRect(hx, hy, targetSize, targetSize);
       }
       ctx.restore();
@@ -666,7 +666,7 @@ const PublicView = () => {
             {isLoggedIn && (
               <p className="text-slate-400 text-xs mt-3 leading-relaxed font-medium">
                 Ya sos parte. Explorá los locales que hacen que Buenos Aires sea única. Todo lo que aparece acá <br/>
-                <span className="text-indigo-400 is-posta-font">¡Es la Posta!</span>
+                <span className="text-slate-400 is-posta-font">¡Es la Posta!</span>
               </p>
             )}
           </div>
@@ -675,7 +675,7 @@ const PublicView = () => {
         {isLoggedIn ? (
           <>
             <button className="drawer-item" onClick={() => setMenuOpen(false)}>
-              <Zap size={18} className="text-indigo-400" />
+              <Zap size={18} className="text-slate-400" />
               <span>Mi Cuenta</span>
             </button>
             <button className="drawer-item" onClick={() => setMenuOpen(false)}>
@@ -683,7 +683,7 @@ const PublicView = () => {
               <span>Mis Anuncios</span>
             </button>
             <button className="drawer-item" onClick={() => setMenuOpen(false)}>
-              <Mail size={18} className="text-indigo-400" />
+              <Mail size={18} className="text-slate-400" />
               <span>Mensajes</span>
             </button>
             
@@ -701,7 +701,7 @@ const PublicView = () => {
           </>
         ) : (
           <>
-            <button className="drawer-item bg-indigo-600/20 border-indigo-500/30 text-indigo-300" onClick={() => { setAuthModalMode('login'); setMenuOpen(false); }}>
+            <button className="drawer-item bg-slate-600/20 border-slate-500/30 text-slate-300" onClick={() => { setAuthModalMode('login'); setMenuOpen(false); }}>
               <span>Logearse</span>
             </button>
             <button className="drawer-item bg-emerald-600/20 border-emerald-500/30 text-emerald-300" onClick={() => { setAuthModalMode('register'); setMenuOpen(false); }}>
@@ -732,21 +732,21 @@ const PublicView = () => {
               
               {authModalMode === 'register' && (
                 <div className="flex items-center gap-2 mt-2 mb-4">
-                  <input type="checkbox" id="terms" checked={acceptedTerms} onChange={e=>setAcceptedTerms(e.target.checked)} className="accent-indigo-500" />
+                  <input type="checkbox" id="terms" checked={acceptedTerms} onChange={e=>setAcceptedTerms(e.target.checked)} className="accent-slate-500" />
                   <label htmlFor="terms" className="text-xs text-slate-400">
-                    Acepto los <span className="text-indigo-400 cursor-pointer underline" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}>Términos y Condiciones</span>
+                    Acepto los <span className="text-slate-400 cursor-pointer underline" onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }}>Términos y Condiciones</span>
                   </label>
                 </div>
               )}
               
-              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white font-black uppercase tracking-wider transition-colors mt-2">
+              <button type="submit" className="w-full py-3 bg-slate-600 hover:bg-slate-500 rounded-lg text-white font-black uppercase tracking-wider transition-colors mt-2">
                 {authModalMode === 'login' ? 'Ingresar' : 'Registrarme'}
               </button>
             </form>
             
             <div className="mt-4 text-center text-xs text-slate-400">
               {authModalMode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-              <span className="text-indigo-400 cursor-pointer underline" onClick={() => { setAuthModalMode(authModalMode === 'login' ? 'register' : 'login'); setAuthError(''); }}>
+              <span className="text-slate-400 cursor-pointer underline" onClick={() => { setAuthModalMode(authModalMode === 'login' ? 'register' : 'login'); setAuthError(''); }}>
                 {authModalMode === 'login' ? 'Regístrate aquí' : 'Inicia Sesión'}
               </span>
             </div>
@@ -758,7 +758,7 @@ const PublicView = () => {
       {showTermsModal && (
         <div className="modal-overlay" style={{ zIndex: 4000 }}>
           <div className="modal-content max-w-lg max-h-[80vh] flex flex-col relative">
-            <h2 className="text-lg font-black text-center mb-4 text-indigo-400">Términos y Condiciones de Uso y Política de Tratamiento de Datos</h2>
+            <h2 className="text-lg font-black text-center mb-4 text-slate-400">Términos y Condiciones de Uso y Política de Tratamiento de Datos</h2>
             <div className="flex-1 overflow-y-auto no-scrollbar text-xs text-slate-300 space-y-4 pr-2">
               <p><strong>1. Aceptación de las Condiciones de Servicio</strong><br/>El acceso y utilización de este sitio web (en adelante, "la Plataforma") atribuye la condición de Usuario, quien, mediante la navegación y/o interacción en el mismo, manifiesta su aceptación plena y sin reservas de las presentes cláusulas. El desconocimiento del contenido de estas condiciones no exime al Usuario de las responsabilidades derivadas de su aceptación técnica.</p>
               <p><strong>2. Consentimiento Informado y Finalidad del Tratamiento</strong><br/>De conformidad con el Art. 5 de la Ley 25.326, el Usuario presta su consentimiento expreso para que los datos recabados de forma directa o indirecta (mediante cookies, metadatos, registros de actividad o formularios) sean incorporados a una base de datos de titularidad privada.</p>
@@ -956,7 +956,7 @@ const PublicView = () => {
 
       {/* Featured Ad — Bottom Center (Only Desktop) */}
       {!isMobile && showIsland && featuredAd && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[280px] glass-card border border-indigo-500/30 shadow-[0_-10px_50px_-12px_rgba(79,70,229,0.3)] rounded-[24px] overflow-hidden flex flex-col pointer-events-auto transition-all duration-500 z-50" style={{ animation: 'slideUp 0.5s ease' }}>
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[280px] glass-card border border-slate-500/30 shadow-[0_-10px_50px_-12px_rgba(100,116,139,0.3)] rounded-[24px] overflow-hidden flex flex-col pointer-events-auto transition-all duration-500 z-50" style={{ animation: 'slideUp 0.5s ease' }}>
           <button onClick={() => setShowIsland(false)} className="absolute top-2.5 right-2.5 p-1.5 bg-black/50 hover:bg-black/90 rounded-full text-white transition-colors z-10 backdrop-blur-md">
             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
@@ -1127,9 +1127,9 @@ const PublicView = () => {
               </div>
 
               {/* Brand Logo / Name */}
-              <div className="p-5 bg-gradient-to-b from-indigo-950/50 to-transparent">
+              <div className="p-5 bg-gradient-to-b from-slate-950/50 to-transparent">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-indigo-500/30 overflow-hidden flex-shrink-0 shadow-xl">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-950 border border-slate-500/30 overflow-hidden flex-shrink-0 shadow-xl">
                     {imageObjects[hoveredAd.id] ? (
                       <img src={imageObjects[hoveredAd.id].src} className="w-full h-full object-cover" alt="" />
                     ) : (
@@ -1221,7 +1221,7 @@ const PublicView = () => {
                      style={{ 
                        margin: 0, fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', 
                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', 
-                       letterSpacing: '0.5px', color: '#6366f1', cursor: 'pointer'
+                       letterSpacing: '0.5px', color: '#9ca3af', cursor: 'pointer'
                      }}
                    >
                      {hoveredAd.name || 'ANUNCIANTE'}

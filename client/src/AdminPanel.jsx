@@ -246,8 +246,8 @@ const AdminPanel = () => {
         : { background: 'rgba(14,165,233,0.08)', color: '#38bdf8' };
     } else if (sectorId.startsWith('centro') || sectorId === 'centro') {
       return isSelected 
-        ? { background: '#6366f1', color: 'white', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' } 
-        : { background: 'rgba(99,102,241,0.08)', color: '#818cf8' };
+        ? { background: '#9ca3af', color: 'white', boxShadow: '0 4px 16px rgba(156,163,175,0.35)' } 
+        : { background: 'rgba(156,163,175,0.08)', color: '#cbd5e1' };
     } else {
       return isSelected 
         ? { background: '#f59e0b', color: 'white', boxShadow: '0 4px 16px rgba(245,158,11,0.35)' } 
@@ -266,7 +266,7 @@ const AdminPanel = () => {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
         <div className="admin-card" style={{ maxWidth: '400px', width: '90%', padding: '40px', textAlign: 'center' }}>
-          <Shield size={48} color="#6366f1" style={{ marginBottom: '20px' }} />
+          <Shield size={48} color="#9ca3af" style={{ marginBottom: '20px' }} />
           <h2 className="admin-title">Acceso al Sistema</h2>
           <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '30px' }}>Ingrese sus credenciales para continuar.</p>
           <input 
@@ -309,7 +309,7 @@ const AdminPanel = () => {
             <div className="modal-handle" />
             <div className="modal-header">
               <h3 className="modal-title">
-                <Edit3 size={18} style={{ color: '#818cf8' }} /> Editar Anuncio
+                <Edit3 size={18} style={{ color: '#cbd5e1' }} /> Editar Anuncio
               </h3>
               <button className="modal-close" onClick={() => setEditingAd(null)}>
                 <X size={16} />
@@ -409,7 +409,7 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              <button type="submit" className="submit-btn" style={{ marginTop: 8, background: '#6366f1' }}>
+              <button type="submit" className="submit-btn" style={{ marginTop: 8, background: '#9ca3af' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Save size={18} /> Guardar Cambios</span>
               </button>
             </form>
@@ -447,10 +447,10 @@ const AdminPanel = () => {
         {/* ===== FORM TOGGLE ===== */}
         <div className="glass-card" style={{ overflow: 'hidden', border: '1px solid rgba(30,41,59,0.6)' }}>
           <button type="button" onClick={() => setIsFormOpen(!isFormOpen)} className="toggle-btn">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 900, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 900, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
               <Send size={14} /> Nueva Venta
             </span>
-            {isFormOpen ? <ChevronUp size={18} style={{ color: '#818cf8' }} /> : <ChevronDown size={18} style={{ color: '#818cf8' }} />}
+            {isFormOpen ? <ChevronUp size={18} style={{ color: '#cbd5e1' }} /> : <ChevronDown size={18} style={{ color: '#cbd5e1' }} />}
           </button>
 
           {isFormOpen && (
@@ -458,7 +458,7 @@ const AdminPanel = () => {
               
               {/* ── ETAPA 1: Datos del Cliente ── */}
               <div className="stage-card stage-card--indigo">
-                <h3 className="stage-header" style={{ color: '#818cf8' }}>
+                <h3 className="stage-header" style={{ color: '#cbd5e1' }}>
                   <User size={14} /> Etapa 1 — Datos del Cliente
                 </h3>
                 <div className="field-stack">
@@ -547,8 +547,8 @@ const AdminPanel = () => {
                     <label className={`upload-zone ${base64Image ? 'upload-zone--filled' : ''}`}>
                       {base64Image ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <img src={base64Image} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '2px solid #6366f1' }} alt="" />
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#818cf8', textTransform: 'uppercase' }}>Imagen lista ✓</span>
+                          <img src={base64Image} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '2px solid #9ca3af' }} alt="" />
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase' }}>Imagen lista ✓</span>
                         </div>
                       ) : (
                         <>
@@ -689,7 +689,7 @@ const AdminPanel = () => {
                     <div className="history-details">
                       {ad.phone && <div className="history-detail-item"><Phone size={10} /> {ad.phone}</div>}
                       {ad.email && <div className="history-detail-item" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><Mail size={10} /> {ad.email}</div>}
-                      {ad.location && <div className="history-detail-item history-detail-item--full" style={{ color: '#818cf8' }}><MapPin size={10} /> {ad.location}</div>}
+                      {ad.location && <div className="history-detail-item history-detail-item--full" style={{ color: '#cbd5e1' }}><MapPin size={10} /> {ad.location}</div>}
                     </div>
                   )}
 

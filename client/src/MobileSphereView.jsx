@@ -258,10 +258,10 @@ export default function MobileSphereView({ ads, imageObjects, hoveredAd, setHove
       <div style={{
         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         width: '176px', height: '176px', 
-        border: isSnapped ? '3px solid #3b82f6' : '3px solid rgba(255,255,255,0.1)', 
-        backgroundColor: isSnapped ? 'rgba(59,130,246,0.2)' : 'transparent',
+        border: isSnapped ? '3px solid #9ca3af' : '3px solid rgba(255,255,255,0.1)', 
+        backgroundColor: isSnapped ? 'rgba(156, 163, 175, 0.2)' : 'transparent',
         pointerEvents: 'none', zIndex: 20, 
-        boxShadow: isSnapped ? '0 0 30px rgba(59,130,246,0.6)' : 'none',
+        boxShadow: isSnapped ? '0 0 30px rgba(156, 163, 175, 0.6)' : 'none',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }} />
 
