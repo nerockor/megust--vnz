@@ -666,7 +666,7 @@ const PublicView = () => {
             {isLoggedIn && (
               <p className="text-slate-400 text-xs mt-3 leading-relaxed font-medium">
                 Ya sos parte. Explorá los locales que hacen que Buenos Aires sea única. Todo lo que aparece acá <br/>
-                <span className="text-slate-400 is-posta-font">¡Es la Posta!</span>
+                <span className="text-slate-400 is-posta-font">¡Me gusta Venezuela!</span>
               </p>
             )}
           </div>
@@ -785,7 +785,7 @@ const PublicView = () => {
             <img src="/favicon.svg" alt="isotype" className="isotype-icon" />
           </button>
         </div>
-        <h1 className="header-title">eslaposta</h1>
+        <h1 className="header-title">MegustaVenezuela</h1>
         <div style={{ width: 55 }} /> {/* Espaciador para balancear */}
       </div>
 
