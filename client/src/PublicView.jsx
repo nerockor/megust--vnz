@@ -490,20 +490,26 @@ const PublicView = () => {
     const safeAds = Array.isArray(ads) ? ads : [];
     if (safeAds.length === 0 || isFetchingBatch) return;
 
-    // Calculate viewport bounds in world coordinates
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const minX = -transform.x / transform.scale;
-    const minY = -transform.y / transform.scale;
-    const maxX = (rect.width - transform.x) / transform.scale;
-    const maxY = (rect.height - transform.y) / transform.scale;
+    let visibleUnloaded = [];
 
-    // Find ads in viewport that don't have images loaded
-    const visibleUnloaded = safeAds.filter(ad => 
-      ad.x + ad.width >= minX && ad.x <= maxX &&
-      ad.y + ad.height >= minY && ad.y <= maxY &&
-      !loadedImageIds.has(ad.id)
-    ).slice(0, 50); // Fetch in small batches
+    if (isMobile) {
+      // En móvil, como los anuncios rotan en la esfera, simplemente cargamos los que falten por lotes
+      visibleUnloaded = safeAds.filter(ad => !loadedImageIds.has(ad.id)).slice(0, 50);
+    } else {
+      if (!canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const minX = -transform.x / transform.scale;
+      const minY = -transform.y / transform.scale;
+      const maxX = (rect.width - transform.x) / transform.scale;
+      const maxY = (rect.height - transform.y) / transform.scale;
+
+      // Encontrar anuncios en el viewport que no tengan imagen cargada
+      visibleUnloaded = safeAds.filter(ad => 
+        ad.x + ad.width >= minX && ad.x <= maxX &&
+        ad.y + ad.height >= minY && ad.y <= maxY &&
+        !loadedImageIds.has(ad.id)
+      ).slice(0, 50);
+    }
 
     if (visibleUnloaded.length === 0) return;
 
