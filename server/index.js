@@ -2,6 +2,7 @@ console.log('>>> [DEBUG] EL ARCHIVO INDEX.JS SE ESTA EJECUTANDO');
 console.log('>>> [DEBUG] FECHA:', new Date().toISOString());
 
 const express = require('express');
+const fs = require('fs');
 console.log('>>> [DEBUG] EXPRESS CARGADO');
 let sqlite3;
 try {
@@ -61,9 +62,37 @@ const auth = (req, res, next) => {
 const clean = (val) => (typeof val === 'string' ? xss(val) : val);
 
 // Database setup
-console.log('>>> [DEBUG] ABRIENDO BASE DE DATOS...');
-const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'database.db');
-console.log('>>> [DEBUG] RUTA DB:', dbPath);
+console.log('>>> [DEBUG] PREPARANDO BASE DE DATOS...');
+let dbPath = process.env.DB_PATH || path.resolve(__dirname, 'database.db');
+
+// Si la ruta es relativa, resolverla respecto al directorio de trabajo actual
+if (dbPath.startsWith('.') || !dbPath.startsWith('/')) {
+    dbPath = path.resolve(process.cwd(), dbPath);
+}
+
+const dbDir = path.dirname(dbPath);
+console.log('>>> [DEBUG] RUTA FINAL DB:', dbPath);
+console.log('>>> [DEBUG] CARPETA DB:', dbDir);
+
+// Asegurar que el directorio existe
+if (!fs.existsSync(dbDir)) {
+    console.log('>>> [DEBUG] LA CARPETA NO EXISTE EN EL SISTEMA. INTENTANDO CREARLA...');
+    try {
+        fs.mkdirSync(dbDir, { recursive: true });
+        console.log('>>> [DEBUG] CARPETA CREADA EXITOSAMENTE');
+    } catch (e) {
+        console.error('>>> [ERROR FATAL] NO SE PUDO CREAR LA CARPETA:', e.message);
+    }
+} else {
+    console.log('>>> [DEBUG] LA CARPETA EXISTE Y ES ACCESIBLE');
+    try {
+        fs.accessSync(dbDir, fs.constants.W_OK);
+        console.log('>>> [DEBUG] PERMISO DE ESCRITURA CONFIRMADO EN LA CARPETA');
+    } catch (e) {
+        console.error('>>> [ERROR] SIN PERMISO DE ESCRITURA EN LA CARPETA:', e.message);
+    }
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('>>> [ERROR DB] ERROR AL ABRIR:', err.message);
