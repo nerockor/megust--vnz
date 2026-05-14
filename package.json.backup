@@ -1,0 +1,16 @@
+{
+  "name": "megustavenezuela-root",
+  "version": "1.0.0",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "sqlite3": "5.1.7",
+    "cors": "^2.8.6",
+    "body-parser": "^2.2.2",
+    "express-rate-limit": "^8.4.1",
+    "xss": "^1.0.15"
+  }
+}

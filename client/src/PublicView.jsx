@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { ZoomIn, ZoomOut, Maximize, MapPin, Tag, Image as ImageIcon, ExternalLink, Phone, Mail, Filter, X, ChevronDown, Zap, Menu } from 'lucide-react';
 import MobileSphereView from './MobileSphereView';
+import DesktopSphereSplitView from './DesktopSphereSplitView';
 
 const CANVAS_SIZE = 1000;
 const API_URL = '/api/ads';
@@ -143,6 +144,21 @@ const PublicView = () => {
       console.error('Error fetching favorites:', err);
     }
   };
+
+  const displayAds = useMemo(() => {
+    const validAds = Array.isArray(ads) ? ads : [];
+    return validAds.filter(ad => {
+      let isFilteredOut = (selectedCategory && ad.category !== selectedCategory) || 
+                           (selectedBarrio && ad.barrio !== selectedBarrio) ||
+                           (selectedZona && ad.zona !== selectedZona);
+      
+      if (showFavoritesOnly && !favoriteAdIds.has(ad.id)) {
+        isFilteredOut = true;
+      }
+      
+      return !isFilteredOut;
+    });
+  }, [ads, selectedCategory, selectedBarrio, selectedZona, showFavoritesOnly, favoriteAdIds]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -562,7 +578,8 @@ const PublicView = () => {
     
     // 1. Draw all background ads (the grid squares)
     const validAds = Array.isArray(ads) ? ads : [];
-    const filteredAds = validAds.filter(ad => {
+    // Only display on canvas if it exists (mobile doesn't use canvas anymore either, but kept for legacy)
+    const filteredAdsForCanvas = validAds.filter(ad => {
       let isFilteredOut = (selectedCategory && ad.category !== selectedCategory) || 
                            (selectedBarrio && ad.barrio !== selectedBarrio) ||
                            (selectedZona && ad.zona !== selectedZona);
@@ -574,7 +591,7 @@ const PublicView = () => {
       return !isFilteredOut;
     });
 
-    filteredAds.forEach(ad => {
+    filteredAdsForCanvas.forEach(ad => {
       if (ad.id === hoveredAd?.id) return;
       
       const img = imageObjects[ad.id];
@@ -777,15 +794,7 @@ const PublicView = () => {
   };
 
   return (
-    <div 
-      className="relative w-screen h-screen overflow-hidden bg-[#1a1a1a] select-none"
-      onMouseDown={!isMobile ? handleMouseDown : undefined}
-      onMouseMove={!isMobile ? handleMouseMove : undefined}
-      onMouseUp={!isMobile ? handleMouseUp : undefined}
-      onWheel={!isMobile ? handleWheel : undefined}
-      onClick={!isMobile ? handleClick : undefined}
-      style={{ cursor: isMobile ? 'default' : (isDragging ? 'grabbing' : (hoveredAd ? 'pointer' : 'grab')) }}
-    >
+    <div className="relative w-screen h-screen overflow-hidden bg-[#1a1a1a] select-none">
       {/* Menú Lateral (Drawer) */}
       <div className={`drawer-overlay ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)} />
       <div className={`user-drawer ${menuOpen ? 'open' : ''}`}>
@@ -944,81 +953,77 @@ const PublicView = () => {
           spinTrigger={spinTrigger}
         />
       ) : (
-        <canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight} className="absolute inset-0" />
+        <DesktopSphereSplitView 
+          ads={displayAds}
+          imageObjects={imageObjects}
+          hoveredAd={hoveredAd}
+          setHoveredAd={setHoveredAd}
+          targetAd={targetAd}
+          setTargetAd={setTargetAd}
+          spinTrigger={spinTrigger}
+          // Filtros
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedBarrio={selectedBarrio}
+          setSelectedBarrio={setSelectedBarrio}
+          selectedZona={selectedZona}
+          setSelectedZona={setSelectedZona}
+          filterOpen={filterOpen}
+          setFilterOpen={setFilterOpen}
+          barrioFilterOpen={barrioFilterOpen}
+          setBarrioFilterOpen={setBarrioFilterOpen}
+        />
       )}
 
-      {/* Desktop Filters (Top Left) */}
-      {!isMobile && (
-        <div className="absolute top-5 left-5 z-[60] pointer-events-auto flex flex-col gap-3">
-          <button
-            onClick={(e) => { e.stopPropagation(); setFilterOpen(!filterOpen); setBarrioFilterOpen(false); }}
-            className={`w-52 flex items-center justify-between px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 backdrop-blur-xl border shadow-lg ${
-              selectedCategory
-                ? 'bg-indigo-600/90 text-white border-indigo-400/40 shadow-indigo-600/30'
-                : 'bg-slate-900/80 text-slate-300 border-white/10 shadow-black/20 hover:bg-slate-800/90 hover:border-white/15'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Filter size={14} />
-              <span className="truncate">{selectedCategory || 'Filtrar Rubro'}</span>
-            </div>
-            <ChevronDown size={14} className={`transition-transform duration-300 ${filterOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          <button
-            onClick={(e) => { e.stopPropagation(); setBarrioFilterOpen(!barrioFilterOpen); setFilterOpen(false); }}
-            className={`w-52 flex items-center justify-between px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 backdrop-blur-xl border shadow-lg ${
-              selectedBarrio
-                ? 'bg-emerald-600/90 text-white border-emerald-400/40 shadow-emerald-600/30'
-                : 'bg-slate-900/80 text-slate-300 border-white/10 shadow-black/20 hover:bg-slate-800/90 hover:border-white/15'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <MapPin size={14} />
-              <span className="truncate">{selectedZona || selectedBarrio || 'Filtrar Ciudad'}</span>
-            </div>
-            <ChevronDown size={14} className={`transition-transform duration-300 ${barrioFilterOpen ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-      )}
-
-      {/* Dropdown Portals (Global - Center on mobile, Top-left on desktop) */}
+      {/* Dropdown Portals (Global - Center on mobile, Left panel on desktop) */}
       <div 
         onClick={() => { setFilterOpen(false); setBarrioFilterOpen(false); }}
         className={`fixed z-[100] pointer-events-none flex flex-col gap-3 transition-all duration-500 ${
         isMobile 
           ? 'hidden' 
-          : 'top-5 left-5'
+          : 'top-24 left-10'
       } ${!isMobile && (filterOpen || barrioFilterOpen) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           
           {/* Rubro Dropdown Container */}
-          <div className={`relative pointer-events-auto transition-all duration-300 ${
-            filterOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 hidden'
-          }`}>
+          <div style={{
+            position: 'relative',
+            pointerEvents: 'auto',
+            transition: 'all 0.3s ease',
+            transform: filterOpen ? 'scale(1)' : 'scale(0.95)',
+            opacity: filterOpen ? 1 : 0,
+            display: filterOpen ? 'block' : 'none'
+          }}>
             <div
-              className={`w-80 max-h-[60vh] overflow-y-auto no-scrollbar rounded-3xl border border-white/20 bg-slate-900/95 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,1)] p-5`}
+              style={{
+                width: '450px',
+                maxHeight: '70vh',
+                overflowY: 'auto',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                padding: '25px'
+              }}
+              className="no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Seleccionar Rubro</h3>
-                <button onClick={() => setFilterOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                  <X size={16} className="text-slate-400" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#818cf8', flex: 1 }}>Seleccionar Rubro</h3>
+                <button onClick={() => setFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: '#94a3b8' }}>
+                  <X size={20} />
                 </button>
               </div>
 
               <button
                 onClick={() => { setSelectedCategory(null); setFilterOpen(false); }}
-                className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl mb-4 text-[10px] font-black uppercase tracking-widest transition-all ${
-                  !selectedCategory
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                    : 'bg-slate-800/50 text-slate-400 border border-white/5 hover:bg-slate-800'
-                }`}
+                className={`cyber-btn ${!selectedCategory ? 'active' : ''}`}
+                style={{ width: '100%', padding: '15px', borderRadius: '12px', marginBottom: '15px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
               >
                 <span>Mostrar Todos</span>
-                {!selectedCategory && <Filter size={12} />}
               </button>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                 {(() => {
                   const arr = (Array.isArray(categories) && categories.length > 0) 
                     ? categories.map(cat => ({ id: cat.id, name: cat.name }))
@@ -1030,11 +1035,8 @@ const PublicView = () => {
                       <button
                         key={item.id}
                         onClick={() => { setSelectedCategory(isActive ? null : item.name); setFilterOpen(false); }}
-                        className={`px-4 py-4 rounded-2xl text-[9px] font-black uppercase tracking-wide transition-all text-center border ${
-                          isActive 
-                            ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' 
-                            : 'bg-slate-800/30 border-white/5 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-white/20'
-                        }`}
+                        className={`cyber-btn ${isActive ? 'active' : ''}`}
+                        style={{ padding: '12px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', borderRadius: '10px' }}
                       >
                         {item.name}
                       </button>
@@ -1046,30 +1048,42 @@ const PublicView = () => {
           </div>
 
           {/* Barrio Dropdown Container */}
-          <div className={`relative pointer-events-auto transition-all duration-300 ${
-            barrioFilterOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 hidden'
-          }`}>
+          <div style={{
+            position: 'relative',
+            pointerEvents: 'auto',
+            transition: 'all 0.3s ease',
+            transform: barrioFilterOpen ? 'scale(1)' : 'scale(0.95)',
+            opacity: barrioFilterOpen ? 1 : 0,
+            display: barrioFilterOpen ? 'block' : 'none'
+          }}>
             <div
-              className={`w-80 max-h-[60vh] overflow-y-auto no-scrollbar rounded-3xl border border-white/20 bg-slate-900/95 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,1)] p-5`}
+              style={{
+                width: '450px',
+                maxHeight: '70vh',
+                overflowY: 'auto',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                padding: '25px'
+              }}
+              className="no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Seleccionar Ciudad</h3>
-                <button onClick={() => setBarrioFilterOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                  <X size={16} className="text-slate-400" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#10b981', flex: 1 }}>Seleccionar Ciudad</h3>
+                <button onClick={() => setBarrioFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: '#94a3b8' }}>
+                  <X size={20} />
                 </button>
               </div>
 
               <button
                 onClick={() => { setSelectedBarrio(null); setSelectedZona(null); setBarrioFilterOpen(false); }}
-                className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl mb-4 text-[10px] font-black uppercase tracking-widest transition-all ${
-                  !selectedBarrio
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                    : 'bg-slate-800/50 text-slate-400 border border-white/5 hover:bg-slate-800'
-                }`}
+                className={`cyber-btn ${!selectedBarrio ? 'active' : ''}`}
+                style={{ width: '100%', padding: '15px', borderRadius: '12px', marginBottom: '15px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
               >
                 <span>Cualquier Ciudad</span>
-                {!selectedBarrio && <MapPin size={12} />}
               </button>
 
               {BARRIOS.map(b => {
