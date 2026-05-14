@@ -137,26 +137,43 @@ export default function MobileSphereView({ ads, imageObjects, hoveredAd, setHove
       }
 
       // ════════════════════════════════════════════════════════════════════
-      // C. FÍSICA DE INERCIA
+      // C. FÍSICA DE INERCIA Y ENCAJE MAGNÉTICO
       // ════════════════════════════════════════════════════════════════════
       if (!isDragging.current && !targetAd) {
-        scrollRef.current.x += velocityRef.current.x;
-        scrollRef.current.y += velocityRef.current.y;
-        velocityRef.current.x *= FRICTION;
-        velocityRef.current.y *= FRICTION;
+        // Solo aplicar velocidad si es significativa para evitar drift microscópico
+        if (Math.abs(velocityRef.current.x) > 0.0001 || Math.abs(velocityRef.current.y) > 0.0001) {
+          scrollRef.current.x += velocityRef.current.x;
+          scrollRef.current.y += velocityRef.current.y;
+          velocityRef.current.x *= FRICTION;
+          velocityRef.current.y *= FRICTION;
+        } else {
+          velocityRef.current.x = 0;
+          velocityRef.current.y = 0;
+        }
 
         // ── D. ENCAJE MAGNÉTICO (Snap to Grid) ──
         if (Math.abs(velocityRef.current.x) < SNAP_THRESHOLD && Math.abs(velocityRef.current.y) < SNAP_THRESHOLD) {
           const snapX = Math.round(scrollRef.current.x / SPACING) * SPACING;
           const snapY = Math.round(scrollRef.current.y / SPACING) * SPACING;
-          scrollRef.current.x += (snapX - scrollRef.current.x) * SNAP_SPEED;
-          scrollRef.current.y += (snapY - scrollRef.current.y) * SNAP_SPEED;
+          
+          const dx = snapX - scrollRef.current.x;
+          const dy = snapY - scrollRef.current.y;
 
-          const distToSnap = Math.abs(snapX - scrollRef.current.x) + Math.abs(snapY - scrollRef.current.y);
-          const currentlySnapped = distToSnap < SNAP_DIST;
-          if (currentlySnapped !== snappedRef.current) {
-            snappedRef.current = currentlySnapped;
-            setIsSnapped(currentlySnapped);
+          if (Math.abs(dx) > SNAP_DIST || Math.abs(dy) > SNAP_DIST) {
+            scrollRef.current.x += dx * SNAP_SPEED;
+            scrollRef.current.y += dy * SNAP_SPEED;
+            if (snappedRef.current) {
+              snappedRef.current = false;
+              setIsSnapped(false);
+            }
+          } else {
+            // Ya está encajado perfectamente
+            scrollRef.current.x = snapX;
+            scrollRef.current.y = snapY;
+            if (!snappedRef.current) {
+              snappedRef.current = true;
+              setIsSnapped(true);
+            }
           }
         } else {
           if (snappedRef.current) {
@@ -164,7 +181,8 @@ export default function MobileSphereView({ ads, imageObjects, hoveredAd, setHove
             setIsSnapped(false);
           }
         }
-      } else if (isDragging.current) {
+      }
+ else if (isDragging.current) {
         if (snappedRef.current) {
           snappedRef.current = false;
           setIsSnapped(false);

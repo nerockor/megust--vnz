@@ -168,9 +168,12 @@ const PublicView = () => {
 
   useEffect(() => {
     if (hoveredAd) {
-      axios.get(`/api/ads/${hoveredAd.id}/rating`)
-        .then(res => setAdRating(res.data))
-        .catch(() => setAdRating({ avg: 0, count: 0 }));
+      const timer = setTimeout(() => {
+        axios.get(`/api/ads/${hoveredAd.id}/rating`)
+          .then(res => setAdRating(res.data))
+          .catch(() => setAdRating({ avg: 0, count: 0 }));
+      }, 400);
+      return () => clearTimeout(timer);
     } else {
       setAdRating({ avg: 0, count: 0 });
     }

@@ -39,7 +39,7 @@ app.set('trust proxy', 1);
 // 1. Rate Limiting
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
-	max: 100,
+	max: 2000, // Aumentado significativamente para evitar bloqueos en el panel de administración
 	message: { error: 'Demasiadas peticiones. Por favor intenta más tarde.' }
 });
 app.use('/api/', limiter);
