@@ -978,11 +978,8 @@ const PublicView = () => {
       {/* Dropdown Portals (Global - Center on mobile, Left panel on desktop) */}
       <div 
         onClick={() => { setFilterOpen(false); setBarrioFilterOpen(false); }}
-        className={`fixed z-[100] pointer-events-none flex flex-col gap-3 transition-all duration-500 ${
-        isMobile 
-          ? 'hidden' 
-          : 'top-24 left-10'
-      } ${!isMobile && (filterOpen || barrioFilterOpen) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        className={`fixed z-[100] pointer-events-none flex flex-col gap-3 transition-all duration-500 hidden ${
+        !isMobile && (filterOpen || barrioFilterOpen) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
           
           {/* Rubro Dropdown Container */}
           <div style={{
