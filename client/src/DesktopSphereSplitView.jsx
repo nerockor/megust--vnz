@@ -23,11 +23,6 @@ export default function DesktopSphereSplitView({
   barrioFilterOpen,
   setBarrioFilterOpen
 }) {
-  // Estado local para auto-rotación
-  const [localSpinTrigger, setLocalSpinTrigger] = useState(0);
-
-  // Auto-rotación eliminada a petición del usuario
-
   const currentHovered = hoveredAd;
 
   return (
@@ -117,7 +112,7 @@ export default function DesktopSphereSplitView({
           setHoveredAd={setHoveredAd}
           targetAd={targetAd}
           setTargetAd={setTargetAd}
-          spinTrigger={spinTrigger > 0 ? spinTrigger : localSpinTrigger}
+          spinTrigger={spinTrigger}
         />
       </div>
 
