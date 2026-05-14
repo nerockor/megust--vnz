@@ -130,3 +130,69 @@
   text-align: center;
   color: #6b7280;
 }
+
+/* Desktop Popovers */
+.desktop-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  max-height: 400px;
+  overflow-y: auto;
+  animation: popoverFadeIn 0.2s ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmerLine {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.popover-item {
+  width: 100%;
+  padding: 12px 15px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.popover-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.popover-item.active {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: white;
+}
+
+/* Scrollbar for popover */
+.desktop-popover::-webkit-scrollbar {
+  width: 5px;
+}
+.desktop-popover::-webkit-scrollbar-track {
+  background: transparent;
+}
+.desktop-popover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}

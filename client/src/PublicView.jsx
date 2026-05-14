@@ -132,6 +132,7 @@ const PublicView = () => {
   const [authError, setAuthError] = useState('');
   const [adRating, setAdRating] = useState({ avg: 0, count: 0 });
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [favoriteAdIds, setFavoriteAdIds] = useState(new Set());
 
   const fetchFavorites = async () => {
@@ -147,7 +148,7 @@ const PublicView = () => {
 
   const displayAds = useMemo(() => {
     const validAds = Array.isArray(ads) ? ads : [];
-    return validAds.filter(ad => {
+    const filtered = validAds.filter(ad => {
       let isFilteredOut = (selectedCategory && ad.category !== selectedCategory) || 
                            (selectedBarrio && ad.barrio !== selectedBarrio) ||
                            (selectedZona && ad.zona !== selectedZona);
@@ -155,10 +156,31 @@ const PublicView = () => {
       if (showFavoritesOnly && !favoriteAdIds.has(ad.id)) {
         isFilteredOut = true;
       }
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matches = 
+          (ad.name?.toLowerCase().includes(query)) ||
+          (ad.category?.toLowerCase().includes(query)) ||
+          (ad.description?.toLowerCase().includes(query)) ||
+          (ad.barrio?.toLowerCase().includes(query)) ||
+          (ad.zona?.toLowerCase().includes(query));
+        
+        if (!matches) isFilteredOut = true;
+      }
       
       return !isFilteredOut;
     });
-  }, [ads, selectedCategory, selectedBarrio, selectedZona, showFavoritesOnly, favoriteAdIds]);
+
+    return filtered;
+  }, [ads, selectedCategory, selectedBarrio, selectedZona, showFavoritesOnly, favoriteAdIds, searchQuery]);
+
+  // Auto-target if only one ad matches search
+  useEffect(() => {
+    if (searchQuery.trim() && displayAds.length === 1) {
+      setTargetAd(displayAds[0]);
+    }
+  }, [displayAds, searchQuery]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -247,6 +269,10 @@ const PublicView = () => {
         color: #94a3b8;
         font-size: 14px;
         letter-spacing: 1px;
+      }
+      @keyframes shimmerLine {
+        0% { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
       }
       @keyframes rotateCyber {
         from { transform: rotate(0deg); }
@@ -975,216 +1001,20 @@ const PublicView = () => {
           setFilterOpen={setFilterOpen}
           barrioFilterOpen={barrioFilterOpen}
           setBarrioFilterOpen={setBarrioFilterOpen}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          categories={categories}
+          setSpinTrigger={setSpinTrigger}
+          featuredAd={featuredAd}
+          showIsland={showIsland}
+          setShowIsland={setShowIsland}
+          isLoggedIn={isLoggedIn}
         />
       )}
 
-      {/* Dropdown Portals (Global - Center on mobile, Left panel on desktop) */}
-      <div 
-        onClick={() => { setFilterOpen(false); setBarrioFilterOpen(false); }}
-        className={`fixed z-[100] pointer-events-none flex flex-col gap-3 transition-all duration-500 hidden ${
-        !isMobile && (filterOpen || barrioFilterOpen) ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-          
-          {/* Rubro Dropdown Container */}
-          <div style={{
-            position: 'relative',
-            pointerEvents: 'auto',
-            transition: 'all 0.3s ease',
-            transform: filterOpen ? 'scale(1)' : 'scale(0.95)',
-            opacity: filterOpen ? 1 : 0,
-            display: filterOpen ? 'block' : 'none'
-          }}>
-            <div
-              style={{
-                width: '450px',
-                maxHeight: '70vh',
-                overflowY: 'auto',
-                borderRadius: '24px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                padding: '25px'
-              }}
-              className="no-scrollbar"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#818cf8', flex: 1 }}>Seleccionar Rubro</h3>
-                <button onClick={() => setFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: '#94a3b8' }}>
-                  <X size={20} />
-                </button>
-              </div>
 
-              <button
-                onClick={() => { setSelectedCategory(null); setFilterOpen(false); }}
-                className={`cyber-btn ${!selectedCategory ? 'active' : ''}`}
-                style={{ width: '100%', padding: '15px', borderRadius: '12px', marginBottom: '15px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
-              >
-                <span>Mostrar Todos</span>
-              </button>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                {(() => {
-                  const arr = (Array.isArray(categories) && categories.length > 0) 
-                    ? categories.map(cat => ({ id: cat.id, name: cat.name }))
-                    : RUBROS.map((r, i) => ({ id: i, name: r }));
-                  
-                  return arr.map(item => {
-                    const isActive = selectedCategory === item.name;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => { setSelectedCategory(isActive ? null : item.name); setFilterOpen(false); }}
-                        className={`cyber-btn ${isActive ? 'active' : ''}`}
-                        style={{ padding: '12px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', borderRadius: '10px' }}
-                      >
-                        {item.name}
-                      </button>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          </div>
 
-          {/* Barrio Dropdown Container */}
-          <div style={{
-            position: 'relative',
-            pointerEvents: 'auto',
-            transition: 'all 0.3s ease',
-            transform: barrioFilterOpen ? 'scale(1)' : 'scale(0.95)',
-            opacity: barrioFilterOpen ? 1 : 0,
-            display: barrioFilterOpen ? 'block' : 'none'
-          }}>
-            <div
-              style={{
-                width: '450px',
-                maxHeight: '70vh',
-                overflowY: 'auto',
-                borderRadius: '24px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                backdropFilter: 'blur(20px)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                padding: '25px'
-              }}
-              className="no-scrollbar"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.2em', color: '#10b981', flex: 1 }}>Seleccionar Ciudad</h3>
-                <button onClick={() => setBarrioFilterOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', color: '#94a3b8' }}>
-                  <X size={20} />
-                </button>
-              </div>
 
-              <button
-                onClick={() => { setSelectedBarrio(null); setSelectedZona(null); setBarrioFilterOpen(false); }}
-                className={`cyber-btn ${!selectedBarrio ? 'active' : ''}`}
-                style={{ width: '100%', padding: '15px', borderRadius: '12px', marginBottom: '15px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}
-              >
-                <span>Cualquier Ciudad</span>
-              </button>
-
-              {BARRIOS.map(b => {
-                const isActive = selectedBarrio === b;
-                return (
-                  <button
-                    key={b}
-                    onClick={() => { 
-                      if (isActive) {
-                        setSelectedBarrio(null);
-                        setSelectedZona(null);
-                      } else {
-                        setSelectedBarrio(b);
-                        setSelectedZona(null);
-                      }
-                    }}
-                    className={`w-full text-left p-3 rounded-xl transition-all mb-1 ${
-                      isActive 
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50' 
-                        : 'bg-slate-800/30 border-white/5 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-white/20'
-                    }`}
-                  >
-                    {b}
-                  </button>
-                );
-              })}
-
-              {selectedBarrio && ZONAS_POR_CIUDAD[selectedBarrio] && (
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-2">Seleccionar Zona en {selectedBarrio.split(' ')[0]}</h3>
-                  <button
-                    onClick={() => { setSelectedZona(null); setBarrioFilterOpen(false); }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl mb-2 transition-all ${
-                      !selectedZona
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
-                        : 'bg-slate-800/50 text-slate-400 border border-white/5 hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>Cualquier Zona</span>
-                    {!selectedZona && <MapPin size={12} />}
-                  </button>
-                  {ZONAS_POR_CIUDAD[selectedBarrio].map(z => {
-                    const isZonaActive = selectedZona === z;
-                    return (
-                      <button
-                        key={z}
-                        onClick={() => { setSelectedZona(isZonaActive ? null : z); setBarrioFilterOpen(false); }}
-                        className={`w-full text-left p-3 rounded-xl transition-all mb-1 ${
-                          isZonaActive 
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50' 
-                            : 'bg-slate-800/30 border-white/5 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-white/20'
-                        }`}
-                      >
-                        {z}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-      </div>
-
-      {/* Featured Ad — Bottom Center (Only Desktop) */}
-      {!isMobile && showIsland && featuredAd && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[280px] glass-card border border-slate-500/30 shadow-[0_-10px_50px_-12px_rgba(100,116,139,0.3)] rounded-[24px] overflow-hidden flex flex-col pointer-events-auto transition-all duration-500 z-50" style={{ animation: 'slideUp 0.5s ease' }}>
-          <button onClick={() => setShowIsland(false)} className="absolute top-2.5 right-2.5 p-1.5 bg-black/50 hover:bg-black/90 rounded-full text-white transition-colors z-10 backdrop-blur-md">
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
-          
-          <div className="h-[70px] bg-indigo-950 relative">
-            {featuredAd.image ? <img src={featuredAd.image} className="w-full h-full object-cover opacity-90" alt="" /> : <div className="w-full h-full bg-indigo-600/20" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent" />
-            <div className="absolute top-2 left-3 px-2 py-0.5 bg-indigo-600/80 rounded-full text-[6px] font-black uppercase text-white tracking-widest backdrop-blur-sm">Destacado</div>
-            {featuredAd.category && (
-              <div className="absolute top-2 right-10 px-2 py-0.5 bg-emerald-600/80 rounded-full text-[6px] font-black uppercase text-white tracking-widest backdrop-blur-sm flex items-center gap-1">
-                <Tag size={6} /> {featuredAd.category}
-              </div>
-            )}
-          </div>
-          
-          <div className="bg-[#1a1a1a] p-3 cursor-pointer hover:bg-[#333333] transition-colors relative" onClick={() => window.open(featuredAd.url.startsWith('http') ? featuredAd.url : `https://${featuredAd.url}`, '_blank')}>
-            <span className="text-[12px] text-white font-black uppercase leading-tight truncate block drop-shadow-md">{featuredAd.name || 'Anunciante'}</span>
-            <span className="text-[9px] text-indigo-400 truncate block font-bold mt-0.5">{featuredAd.url}</span>
-            
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-              {featuredAd.phone && (
-                <span className="text-[8px] text-slate-400 flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  {featuredAd.phone}
-                </span>
-              )}
-              {featuredAd.location && (
-                <span className="text-[8px] text-indigo-300 flex items-center gap-1">
-                  <MapPin size={8} /> {featuredAd.location}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL DE RUBROS FLOTANTE */}
       {isMobile && filterOpen && (
@@ -1405,6 +1235,63 @@ const PublicView = () => {
                   <MapPin size={14} /> Gira la esfera o usa GPS
                </div>
             )}
+          </div>
+
+          {/* Buscador Inteligente Mobile */}
+          <div style={{ padding: '10px 15px', backgroundColor: '#020617' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <p style={{ 
+                color: '#94a3b8', 
+                fontSize: '10px', 
+                fontWeight: '900', 
+                textTransform: 'uppercase', 
+                letterSpacing: '1px',
+                textAlign: 'center',
+                marginBottom: '8px'
+              }}>
+                lo mejor de venezuela esta acá buscalo facil y rapido
+              </p>
+              <div style={{ 
+                height: '2px', 
+                width: '100%', 
+                background: 'linear-gradient(90deg, transparent, #6366f1, #a855f7, transparent)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmerLine 3s linear infinite',
+                borderRadius: '2px'
+              }} />
+            </div>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <input 
+                type="text"
+                placeholder="Busca por nombre, categoría o zona..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '45px',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  padding: '0 40px 0 15px',
+                  color: 'white',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'all 0.3s ease'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              />
+              <Filter 
+                size={18} 
+                style={{ 
+                  position: 'absolute', 
+                  right: '15px', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)',
+                  color: searchQuery ? '#6366f1' : '#64748b'
+                }} 
+              />
+            </div>
           </div>
 
           {/* Botonera de Acciones (Filtros y Mapa) */}
